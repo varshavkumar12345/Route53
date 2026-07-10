@@ -14,10 +14,11 @@ interface HostedZone {
 
 interface HostedZonesTableProps {
   onCreateClick: () => void;
+  onEditClick: (zoneId: string) => void;
   onRefreshStats: () => void;
 }
 
-export default function HostedZonesTable({ onCreateClick, onRefreshStats }: HostedZonesTableProps) {
+export default function HostedZonesTable({ onCreateClick, onEditClick, onRefreshStats }: HostedZonesTableProps) {
   const [zones, setZones] = useState<HostedZone[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -93,7 +94,7 @@ export default function HostedZonesTable({ onCreateClick, onRefreshStats }: Host
         </div>
         <div className={styles.buttonGroup}>
           <button
-            onClick={handleDelete}
+            onClick={() => selectedZoneId && onEditClick(selectedZoneId)}
             className="btn-secondary"
             disabled={!selectedZoneId}
             style={{
@@ -101,9 +102,21 @@ export default function HostedZonesTable({ onCreateClick, onRefreshStats }: Host
               cursor: selectedZoneId ? "pointer" : "not-allowed",
             }}
           >
+            Edit
+          </button>
+          <button
+            onClick={handleDelete}
+            className="btn-secondary"
+            disabled={!selectedZoneId}
+            style={{
+              opacity: selectedZoneId ? 1 : 0.5,
+              cursor: selectedZoneId ? "pointer" : "not-allowed",
+              marginLeft: "10px",
+            }}
+          >
             Delete
           </button>
-          <button onClick={onCreateClick} className="btn-primary">
+          <button onClick={onCreateClick} className="btn-primary" style={{ marginLeft: "10px" }}>
             Create hosted zone
           </button>
         </div>

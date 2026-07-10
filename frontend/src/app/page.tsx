@@ -6,6 +6,7 @@ import TopNav from "../components/TopNav";
 import Sidebar from "../components/Sidebar";
 import HostedZonesTable from "../components/HostedZonesTable";
 import CreateZoneDrawer from "../components/CreateZoneDrawer";
+import EditZoneDrawer from "../components/EditZoneDrawer";
 import styles from "./page.module.css";
 
 interface HostedZone {
@@ -28,6 +29,7 @@ export default function DashboardPage() {
   
   // Drawer state
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editZoneId, setEditZoneId] = useState<string | null>(null);
   
   // Real stats
   const [stats, setStats] = useState({
@@ -180,6 +182,7 @@ export default function DashboardPage() {
             </div>
             <HostedZonesTable 
               onCreateClick={() => setDrawerOpen(true)}
+              onEditClick={(zoneId) => setEditZoneId(zoneId)}
               onRefreshStats={fetchStats}
             />
           </>
@@ -228,6 +231,20 @@ export default function DashboardPage() {
       {drawerOpen && (
         <CreateZoneDrawer 
           onClose={() => setDrawerOpen(false)}
+          onSuccess={() => {
+            fetchStats();
+            // Force refresh active table view if currently rendering
+            if (activeView === "Hosted zones") {
+              setActiveView("Dashboard");
+              setTimeout(() => setActiveView("Hosted zones"), 10);
+            }
+          }}
+        />
+      )}
+      {editZoneId && (
+        <EditZoneDrawer 
+          zoneId={editZoneId}
+          onClose={() => setEditZoneId(null)}
           onSuccess={() => {
             fetchStats();
             // Force refresh active table view if currently rendering
