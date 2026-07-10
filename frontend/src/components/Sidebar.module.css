@@ -1,0 +1,65 @@
+.sidebar {
+  width: 240px;
+  background-color: #ffffff;
+  border-right: 1px solid #eaeded;
+  padding: 20px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex-shrink: 0;
+  min-height: calc(100vh - 45px);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.groupTitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--aws-text-muted);
+  letter-spacing: 0.5px;
+  padding-left: 8px;
+  margin-bottom: 4px;
+}
+
+.groupList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.listItem {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 2px;
+  cursor: pointer;
+  color: var(--aws-text-main);
+  transition: all 0.1s ease-in-out;
+}
+
+.listItem:hover {
+  background-color: #f2f3f3;
+}
+
+.activeItem {
+  background-color: var(--aws-selected-bg);
+  color: var(--aws-blue-interactive);
+  font-weight: 700;
+  border-left: 3px solid var(--aws-blue-interactive);
+  padding-left: 7px; /* Compensate for border width to align text */
+}
+
+.activeItem:hover {
+  background-color: var(--aws-selected-bg);
+}
+
+.itemText {
+  font-size: 14px;
+}
