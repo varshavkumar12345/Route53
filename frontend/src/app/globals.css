@@ -21,6 +21,19 @@
   /* Info Alert Colors */
   --aws-info-bg: #f2f8fc;
   --aws-info-border: #00a1c9;
+
+  /* Notification Banners */
+  --aws-notification-success-bg: #f4faf4;
+  --aws-notification-success-border: #d1ebd1;
+  --aws-notification-success-text: #1a1a1a;
+  --aws-notification-error-bg: #fdf3f3;
+  --aws-notification-error-border: #f9dcdc;
+  --aws-notification-error-text: #1a1a1a;
+  --aws-notification-info-bg: #f2f8fc;
+  --aws-notification-info-border: #d2e4f0;
+  --aws-notification-info-text: #1a1a1a;
+  --aws-notification-dismiss-hover: rgba(0, 0, 0, 0.05);
+  --aws-notification-dismiss-text-hover: #1a1a1a;
 }
 
 [data-theme="dark"] {
@@ -41,6 +54,19 @@
   /* Info Alert Colors (Dark Theme) */
   --aws-info-bg: #142132;
   --aws-info-border: #1e3a5f;
+
+  /* Notification Banners (Dark Theme) */
+  --aws-notification-success-bg: #122718;
+  --aws-notification-success-border: #1d5c22;
+  --aws-notification-success-text: #c9d1d9;
+  --aws-notification-error-bg: #2c1616;
+  --aws-notification-error-border: #6b1d1d;
+  --aws-notification-error-text: #c9d1d9;
+  --aws-notification-info-bg: #142132;
+  --aws-notification-info-border: #1e3a5f;
+  --aws-notification-info-text: #c9d1d9;
+  --aws-notification-dismiss-hover: rgba(255, 255, 255, 0.1);
+  --aws-notification-dismiss-text-hover: #ffffff;
 }
 
 * {

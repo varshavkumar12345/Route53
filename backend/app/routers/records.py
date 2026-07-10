@@ -231,3 +231,199 @@ def delete_record(
     
     db.commit()
     return None
+
+from pydantic import BaseModel
+
+def parse_bind_zone_file(content: str, zone_name: str) -> list:
+    records = []
+    default_ttl = 3600
+    
+    lines = []
+    in_parentheses = False
+    current_line_parts = []
+    
+    for line in content.splitlines():
+        clean_line = ""
+        in_quotes = False
+        for char in line:
+            if char == '"':
+                in_quotes = not in_quotes
+            elif char == ';' and not in_quotes:
+                break
+            clean_line += char
+            
+        clean_line = clean_line.strip()
+        if not clean_line:
+            continue
+            
+        if clean_line.startswith('$'):
+            parts = clean_line.split()
+            if len(parts) >= 2:
+                directive = parts[0].upper()
+                if directive == "$TTL":
+                    try:
+                        val = parts[1]
+                        mult = 1
+                        if val[-1].lower() in ['s', 'm', 'h', 'd', 'w']:
+                            char = val[-1].lower()
+                            val = val[:-1]
+                            if char == 'm': mult = 60
+                            elif char == 'h': mult = 3600
+                            elif char == 'd': mult = 86400
+                            elif char == 'w': mult = 604800
+                        default_ttl = int(val) * mult
+                    except Exception:
+                        pass
+            continue
+            
+        for char in clean_line:
+            if char == '(':
+                in_parentheses = True
+                continue
+            elif char == ')':
+                in_parentheses = False
+                continue
+            current_line_parts.append(char)
+            
+        if not in_parentheses:
+            full_stmt = "".join(current_line_parts).strip()
+            full_stmt = re.sub(r'\s+', ' ', full_stmt)
+            if full_stmt:
+                lines.append(full_stmt)
+            current_line_parts = []
+            
+    last_name = "@"
+    classes = {"IN", "CH", "HS"}
+    valid_types = {"A", "AAAA", "CNAME", "TXT", "MX", "NS", "PTR", "SRV", "CAA", "SOA"}
+    
+    for r_line in lines:
+        parts = r_line.split()
+        if not parts:
+            continue
+            
+        first_token = parts[0].upper()
+        has_explicit_name = True
+        if first_token in classes or first_token in valid_types or first_token.isdigit():
+            has_explicit_name = False
+            
+        name = parts[0] if has_explicit_name else last_name
+        last_name = name
+        
+        rem = parts[1:] if has_explicit_name else parts
+        
+        ttl = default_ttl
+        r_type = None
+        r_class = "IN"
+        r_value_parts = []
+        
+        i = 0
+        while i < len(rem):
+            tok = rem[i].upper()
+            if tok.isdigit():
+                ttl = int(tok)
+            elif tok in classes:
+                r_class = tok
+            elif tok in valid_types:
+                r_type = tok
+                r_value_parts = rem[i+1:]
+                break
+            i += 1
+            
+        if not r_type:
+            continue
+            
+        r_value = " ".join(r_value_parts)
+        z_name = zone_name.strip()
+        if not z_name.endswith("."):
+            z_name += "."
+            
+        rec_name = name.strip()
+        if rec_name == "@":
+            rec_name = z_name
+        elif not rec_name.endswith("."):
+            rec_name = f"{rec_name}.{z_name}"
+            
+        records.append({
+            "name": rec_name,
+            "type": r_type,
+            "ttl": ttl,
+            "value": r_value
+        })
+        
+    return records
+
+class BINDImportRequest(BaseModel):
+    zone_file_content: str
+
+@router.post("/{zone_id}/import")
+def import_bind_records(
+    zone_id: str,
+    request: BINDImportRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    zone = db.query(HostedZone).filter(HostedZone.id == zone_id, HostedZone.owner_id == current_user.id).first()
+    if not zone:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Hosted zone not found or access denied"
+        )
+        
+    try:
+        parsed_records = parse_bind_zone_file(request.zone_file_content, zone.name)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to parse BIND zone file: {str(e)}"
+        )
+        
+    imported_count = 0
+    
+    for r in parsed_records:
+        r_type = r["type"]
+        r_name = r["name"]
+        r_ttl = r["ttl"]
+        r_value = r["value"]
+        
+        if r_type == "SOA":
+            continue
+        if r_type == "NS" and r_name == zone.name:
+            continue
+            
+        if not r_name.endswith(zone.name):
+            continue
+            
+        try:
+            validate_record_values(r_type, r_value)
+        except HTTPException as he:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Record validation failed for {r_name} ({r_type}): {he.detail}"
+            )
+            
+        new_rec = DnsRecord(
+            zone_id=zone_id,
+            name=r_name,
+            type=r_type,
+            ttl=r_ttl,
+            value=r_value,
+            routing_policy="Simple"
+        )
+        db.add(new_rec)
+        imported_count += 1
+        
+    if imported_count > 0:
+        zone.record_count += imported_count
+        try:
+            db.commit()
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Database commit failed: {str(e)}"
+            )
+            
+    return {
+        "status": "success",
+        "imported_count": imported_count
+    }

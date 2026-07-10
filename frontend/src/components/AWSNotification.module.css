@@ -24,26 +24,26 @@
 }
 
 .success {
-  background-color: #f4faf4;
+  background-color: var(--aws-notification-success-bg);
   border-left-color: #1d8102;
-  color: #1a1a1a;
-  border: 1px solid #d1ebd1;
+  color: var(--aws-notification-success-text);
+  border: 1px solid var(--aws-notification-success-border);
   border-left-width: 4px;
 }
 
 .error {
-  background-color: #fdf3f3;
+  background-color: var(--aws-notification-error-bg);
   border-left-color: #d91414;
-  color: #1a1a1a;
-  border: 1px solid #f9dcdc;
+  color: var(--aws-notification-error-text);
+  border: 1px solid var(--aws-notification-error-border);
   border-left-width: 4px;
 }
 
 .info {
-  background-color: #f2f8fc;
+  background-color: var(--aws-notification-info-bg);
   border-left-color: #0073bb;
-  color: #1a1a1a;
-  border: 1px solid #d2e4f0;
+  color: var(--aws-notification-info-text);
+  border: 1px solid var(--aws-notification-info-border);
   border-left-width: 4px;
 }
 
@@ -65,7 +65,7 @@
   cursor: pointer;
   padding: 2px;
   margin-left: 12px;
-  color: #5f6b7a;
+  color: var(--aws-text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -74,6 +74,6 @@
 }
 
 .dismissButton:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-  color: #1a1a1a;
+  background-color: var(--aws-notification-dismiss-hover);
+  color: var(--aws-notification-dismiss-text-hover);
 }

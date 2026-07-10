@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import styles from "./ZoneDetailsView.module.css";
 import CreateRecordDrawer from "./CreateRecordDrawer";
 import EditRecordDrawer from "./EditRecordDrawer";
+import ImportRecordsDrawer from "./ImportRecordsDrawer";
 import AWSPagination from "./AWSPagination";
 import AWSModal from "./AWSModal";
 import AWSNotification from "./AWSNotification";
@@ -39,6 +40,7 @@ export default function ZoneDetailsView({ zoneId, onBackClick }: ZoneDetailsView
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRecord, setSelectedRecord] = useState<DnsRecord | null>(null);
   const [createDrawerOpen, setCreateDrawerOpen] = useState(false);
+  const [importDrawerOpen, setImportDrawerOpen] = useState(false);
   const [editRecordId, setEditRecordId] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -210,6 +212,9 @@ export default function ZoneDetailsView({ zoneId, onBackClick }: ZoneDetailsView
             >
               Delete record
             </button>
+            <button onClick={() => setImportDrawerOpen(true)} className="btn-secondary" style={{ marginLeft: "10px" }}>
+              Import records
+            </button>
             <button onClick={() => setCreateDrawerOpen(true)} className="btn-primary" style={{ marginLeft: "10px" }}>
               Create record
             </button>
@@ -324,6 +329,17 @@ export default function ZoneDetailsView({ zoneId, onBackClick }: ZoneDetailsView
             setSelectedRecord(null);
             fetchData();
             setNotification({ type: "success", message: "Successfully updated DNS record." });
+          }}
+        />
+      )}
+
+      {importDrawerOpen && (
+        <ImportRecordsDrawer
+          zoneId={zoneId}
+          onClose={() => setImportDrawerOpen(false)}
+          onSuccess={(count) => {
+            fetchData();
+            setNotification({ type: "success", message: `Successfully imported ${count} records from BIND zone file.` });
           }}
         />
       )}
