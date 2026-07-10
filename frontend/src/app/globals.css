@@ -17,6 +17,10 @@
   --aws-blue-interactive: #0972ec;
   --aws-blue-hover: #0352ab;
   --aws-selected-bg: #f1f6fd;
+
+  /* Info Alert Colors */
+  --aws-info-bg: #f2f8fc;
+  --aws-info-border: #00a1c9;
 }
 
 [data-theme="dark"] {
@@ -33,6 +37,10 @@
   --aws-selected-bg: #1f2937;
   --aws-blue-interactive: #58a6ff;
   --aws-blue-hover: #1f6feb;
+
+  /* Info Alert Colors (Dark Theme) */
+  --aws-info-bg: #142132;
+  --aws-info-border: #1e3a5f;
 }
 
 * {

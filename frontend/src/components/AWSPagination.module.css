@@ -4,7 +4,7 @@
   align-items: center;
   padding: 10px 20px;
   border-top: 1px solid var(--aws-border-color);
-  background-color: #fafafa;
+  background-color: var(--aws-card-bg);
 }
 
 .displayInfo {
@@ -19,7 +19,7 @@
 }
 
 .navButton {
-  background: #ffffff;
+  background: var(--aws-card-bg);
   border: 1px solid var(--aws-border-darker);
   border-radius: 2px;
   cursor: pointer;
@@ -32,12 +32,12 @@
 }
 
 .navButton:hover:not(:disabled) {
-  background-color: #f2f3f3;
+  background-color: var(--aws-body-bg);
   border-color: #5f6b7a;
 }
 
 .navButton:disabled {
-  background-color: #fafafa;
+  background-color: var(--aws-body-bg);
   border-color: var(--aws-border-color);
   color: #aab7b8;
   cursor: not-allowed;

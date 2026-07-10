@@ -64,7 +64,7 @@
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  background-color: #fafafa;
+  background-color: var(--aws-body-bg);
   border: 1px solid var(--aws-border-darker);
   color: var(--aws-text-muted);
   padding: 2px 8px;
@@ -129,7 +129,7 @@
 
 .filterSection {
   padding: 12px 20px;
-  background-color: #fafafa;
+  background-color: var(--aws-body-bg);
   border-bottom: 1px solid var(--aws-border-color);
 }
 
@@ -153,6 +153,8 @@
   border: 1px solid var(--aws-border-darker);
   border-radius: 2px;
   outline: none;
+  background-color: var(--aws-card-bg);
+  color: var(--aws-text-main);
 }
 
 .searchInput:focus {
@@ -171,7 +173,7 @@
 }
 
 .table th {
-  background-color: #fafafa;
+  background-color: var(--aws-body-bg);
   border-bottom: 1px solid var(--aws-border-color);
   padding: 10px 12px;
   font-size: 12px;
@@ -205,7 +207,7 @@
 }
 
 .row:hover {
-  background-color: #f2f3f3;
+  background-color: var(--aws-body-bg);
 }
 
 .selectedRow {
@@ -223,7 +225,7 @@
 .systemTag {
   font-size: 10px;
   font-weight: 700;
-  background-color: #f2f3f3;
+  background-color: var(--aws-body-bg);
   color: var(--aws-text-muted);
   padding: 1px 6px;
   border-radius: 2px;
@@ -233,7 +235,7 @@
 .typeBadgeSmall {
   font-size: 11px;
   font-weight: 700;
-  background-color: #fcfcfc;
+  background-color: var(--aws-body-bg);
   border: 1px solid var(--aws-border-color);
   color: var(--aws-text-main);
   padding: 2px 6px;

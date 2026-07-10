@@ -239,13 +239,13 @@ export default function DashboardPage() {
           {!infoBannerDismissed && (
             <div className={styles.infoBanner}>
               <div className={styles.infoBannerIcon}>
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="#0073bb">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="var(--aws-blue-interactive)">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
                 </svg>
               </div>
               <div className={styles.infoBannerContent}>
                 <strong style={{ display: "block", marginBottom: "4px" }}>Introducing the new Route53 console experience</strong>
-                <span>We've redesigned the domains pages to make it easier to use. <a href="#" onClick={(e) => e.preventDefault()} style={{ color: "#0073bb", textDecoration: "underline" }}>Let us know what you think</a>. Or you can <a href="#" onClick={(e) => e.preventDefault()} style={{ color: "#0073bb", textDecoration: "underline" }}>use the old console</a>.</span>
+                <span>We've redesigned the domains pages to make it easier to use. <a href="#" onClick={(e) => e.preventDefault()} style={{ color: "var(--aws-blue-interactive)", textDecoration: "underline" }}>Let us know what you think</a>. Or you can <a href="#" onClick={(e) => e.preventDefault()} style={{ color: "var(--aws-blue-interactive)", textDecoration: "underline" }}>use the old console</a>.</span>
               </div>
               <button className={styles.infoBannerClose} onClick={() => setInfoBannerDismissed(true)} aria-label="Dismiss banner">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">

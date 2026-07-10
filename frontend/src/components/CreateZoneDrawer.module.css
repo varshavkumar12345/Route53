@@ -11,7 +11,7 @@
 }
 
 .drawerContent {
-  background-color: #ffffff;
+  background-color: var(--aws-card-bg);
   width: 450px;
   height: 100%;
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
@@ -55,7 +55,7 @@
 }
 
 .closeButton:hover {
-  background-color: #f2f3f3;
+  background-color: var(--aws-body-bg);
   color: var(--aws-text-main);
 }
 
@@ -107,7 +107,8 @@
   border: 1px solid var(--aws-border-darker);
   border-radius: 2px;
   outline: none;
-  background-color: #ffffff;
+  background-color: var(--aws-card-bg);
+  color: var(--aws-text-main);
   resize: vertical;
   font-family: inherit;
 }
@@ -124,7 +125,8 @@
   border: 1px solid var(--aws-border-darker);
   border-radius: 2px;
   outline: none;
-  background-color: #ffffff;
+  background-color: var(--aws-card-bg);
+  color: var(--aws-text-main);
   cursor: pointer;
 }
 
@@ -135,7 +137,7 @@
 .drawerFooter {
   padding: 16px 24px;
   border-top: 1px solid var(--aws-border-color);
-  background-color: #fafafa;
+  background-color: var(--aws-body-bg);
   display: flex;
   justify-content: flex-end;
   gap: 12px;

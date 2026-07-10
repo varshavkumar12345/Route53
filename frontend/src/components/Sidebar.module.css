@@ -1,6 +1,6 @@
 .sidebar {
   width: 260px;
-  background-color: #ffffff;
+  background-color: var(--aws-card-bg);
   border-right: 1px solid var(--aws-border-color);
   display: flex;
   flex-direction: column;

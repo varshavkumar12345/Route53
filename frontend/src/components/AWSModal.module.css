@@ -97,7 +97,7 @@
   gap: 12px;
   padding: 16px 20px;
   border-top: 1px solid var(--aws-border-color);
-  background-color: #fafafa;
+  background-color: var(--aws-body-bg);
 }
 
 .confirmBtn {
