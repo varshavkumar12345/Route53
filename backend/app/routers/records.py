@@ -1,9 +1,11 @@
+import ipaddress
+import re
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from ..database import get_db
 from ..models import HostedZone, DnsRecord
-from ..schemas import DnsRecordResponse
+from ..schemas import DnsRecordCreate, DnsRecordResponse
 from ..auth import get_current_user
 
 router = APIRouter(
@@ -11,17 +13,221 @@ router = APIRouter(
     tags=["records"]
 )
 
+def validate_record_values(record_type: str, value: str):
+    # Splits the multi-line values to validate each line
+    lines = [line.strip() for line in value.strip().split("\n") if line.strip()]
+    if not lines:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Value cannot be empty."
+        )
+
+    if record_type == "A":
+        for ip in lines:
+            try:
+                ipaddress.IPv4Address(ip)
+            except ValueError:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid IPv4 address: '{ip}'"
+                )
+    elif record_type == "AAAA":
+        for ip in lines:
+            try:
+                ipaddress.IPv6Address(ip)
+            except ValueError:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid IPv6 address: '{ip}'"
+                )
+    elif record_type == "CNAME":
+        if len(lines) > 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="CNAME records only support a single value."
+            )
+        cname_val = lines[0]
+        # Simple domain name regex
+        if not re.match(r"^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\.?$", cname_val):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid CNAME domain value: '{cname_val}'"
+            )
+    elif record_type == "TXT":
+        # AWS TXT records must be enclosed in double quotes
+        for text in lines:
+            if not (text.startswith('"') and text.endswith('"')):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"TXT record values must be enclosed in double quotes: {text}"
+                )
+
 @router.get("/{zone_id}/records", response_model=List[DnsRecordResponse])
 def get_records(
     zone_id: str,
+    name: Optional[str] = None,
+    type: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    # Verify zone ownership before returning records
+    # Verify zone ownership
     zone = db.query(HostedZone).filter(HostedZone.id == zone_id, HostedZone.owner_id == current_user.id).first()
     if not zone:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Hosted zone not found or access denied"
         )
-    return db.query(DnsRecord).filter(DnsRecord.zone_id == zone_id).all()
+    
+    query = db.query(DnsRecord).filter(DnsRecord.zone_id == zone_id)
+    if name:
+        query = query.filter(DnsRecord.name.contains(name))
+    if type:
+        query = query.filter(DnsRecord.type == type)
+        
+    return query.all()
+
+@router.post("/{zone_id}/records", response_model=DnsRecordResponse, status_code=status.HTTP_201_CREATED)
+def create_record(
+    zone_id: str,
+    record_in: DnsRecordCreate,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    # Verify zone ownership
+    zone = db.query(HostedZone).filter(HostedZone.id == zone_id, HostedZone.owner_id == current_user.id).first()
+    if not zone:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Hosted zone not found or access denied"
+        )
+
+    # Standardize record name: append zone name if user only entered a prefix
+    rec_name = record_in.name.strip()
+    if not rec_name.endswith("."):
+        rec_name += "."
+    
+    if not rec_name.endswith(zone.name):
+        rec_name = f"{rec_name.rstrip('.')}.{zone.name}"
+
+    # Perform type-specific validations
+    validate_record_values(record_in.type, record_in.value)
+
+    # Save new record
+    new_record = DnsRecord(
+        zone_id=zone_id,
+        name=rec_name,
+        type=record_in.type,
+        ttl=record_in.ttl,
+        value=record_in.value.strip(),
+        routing_policy=record_in.routing_policy or "Simple"
+    )
+
+    db.add(new_record)
+    
+    # Increment zone record count
+    zone.record_count += 1
+    
+    try:
+        db.commit()
+        db.refresh(new_record)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {str(e)}"
+        )
+        
+    return new_record
+
+@router.put("/{zone_id}/records/{record_id}", response_model=DnsRecordResponse)
+def update_record(
+    zone_id: str,
+    record_id: int,
+    record_in: DnsRecordCreate,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    # Verify zone ownership
+    zone = db.query(HostedZone).filter(HostedZone.id == zone_id, HostedZone.owner_id == current_user.id).first()
+    if not zone:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Hosted zone not found or access denied"
+        )
+
+    # Verify record existence
+    record = db.query(DnsRecord).filter(DnsRecord.id == record_id, DnsRecord.zone_id == zone_id).first()
+    if not record:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="DNS record not found"
+        )
+
+    # Prevent editing default system records (NS/SOA at zone root)
+    if record.type in ["NS", "SOA"] and record.name == zone.name:
+        # Prevent editing name or type. Editing values of default records is allowed in AWS console,
+        # but changing name/type breaks the zone routing completely.
+        if record_in.type != record.type:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Default system records (NS/SOA) cannot change their type."
+            )
+
+    # Standardize record name
+    rec_name = record_in.name.strip()
+    if not rec_name.endswith("."):
+        rec_name += "."
+    
+    if not rec_name.endswith(zone.name):
+        rec_name = f"{rec_name.rstrip('.')}.{zone.name}"
+
+    # Re-validate
+    validate_record_values(record_in.type, record_in.value)
+
+    record.name = rec_name
+    record.type = record_in.type
+    record.ttl = record_in.ttl
+    record.value = record_in.value.strip()
+    record.routing_policy = record_in.routing_policy or "Simple"
+
+    db.commit()
+    db.refresh(record)
+    return record
+
+@router.delete("/{zone_id}/records/{record_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_record(
+    zone_id: str,
+    record_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    # Verify zone ownership
+    zone = db.query(HostedZone).filter(HostedZone.id == zone_id, HostedZone.owner_id == current_user.id).first()
+    if not zone:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Hosted zone not found or access denied"
+        )
+
+    # Verify record existence
+    record = db.query(DnsRecord).filter(DnsRecord.id == record_id, DnsRecord.zone_id == zone_id).first()
+    if not record:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="DNS record not found"
+        )
+
+    # Prevent deleting default NS and SOA records
+    if record.type in ["NS", "SOA"] and record.name == zone.name:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Default system records (NS and SOA) cannot be deleted."
+        )
+
+    db.delete(record)
+    
+    # Decrement zone record count
+    zone.record_count -= 1
+    
+    db.commit()
+    return None

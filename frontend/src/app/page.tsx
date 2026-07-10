@@ -7,6 +7,8 @@ import Sidebar from "../components/Sidebar";
 import HostedZonesTable from "../components/HostedZonesTable";
 import CreateZoneDrawer from "../components/CreateZoneDrawer";
 import EditZoneDrawer from "../components/EditZoneDrawer";
+import ZoneDetailsView from "../components/ZoneDetailsView";
+import AWSNotification from "../components/AWSNotification";
 import styles from "./page.module.css";
 
 interface HostedZone {
@@ -30,6 +32,8 @@ export default function DashboardPage() {
   // Drawer state
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editZoneId, setEditZoneId] = useState<string | null>(null);
+  const [selectedDetailZoneId, setSelectedDetailZoneId] = useState<string | null>(null);
+  const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
   
   // Real stats
   const [stats, setStats] = useState({
@@ -183,10 +187,26 @@ export default function DashboardPage() {
             <HostedZonesTable 
               onCreateClick={() => setDrawerOpen(true)}
               onEditClick={(zoneId) => setEditZoneId(zoneId)}
+              onZoneClick={(zoneId) => {
+                setSelectedDetailZoneId(zoneId);
+                setActiveView("ZoneDetails");
+              }}
               onRefreshStats={fetchStats}
+              onNotification={(type, msg) => setNotification({ type, message: msg })}
             />
           </>
         );
+
+      case "ZoneDetails":
+        return selectedDetailZoneId ? (
+          <ZoneDetailsView
+            zoneId={selectedDetailZoneId}
+            onBackClick={() => {
+              setSelectedDetailZoneId(null);
+              setActiveView("Hosted zones");
+            }}
+          />
+        ) : null;
 
       default:
         // Mock views for other sections
@@ -224,6 +244,13 @@ export default function DashboardPage() {
           <Sidebar activeItem={activeView} />
         </div>
         <main className={styles.content}>
+          {notification && (
+            <AWSNotification 
+              type={notification.type} 
+              message={notification.message} 
+              onDismiss={() => setNotification(null)} 
+            />
+          )}
           {renderContent()}
         </main>
       </div>
@@ -238,6 +265,7 @@ export default function DashboardPage() {
               setActiveView("Dashboard");
               setTimeout(() => setActiveView("Hosted zones"), 10);
             }
+            setNotification({ type: "success", message: "Successfully created hosted zone." });
           }}
         />
       )}
@@ -252,6 +280,7 @@ export default function DashboardPage() {
               setActiveView("Dashboard");
               setTimeout(() => setActiveView("Hosted zones"), 10);
             }
+            setNotification({ type: "success", message: "Successfully updated hosted zone." });
           }}
         />
       )}

@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import styles from "./HostedZonesTable.module.css";
+import AWSPagination from "./AWSPagination";
+import AWSModal from "./AWSModal";
 
 interface HostedZone {
   id: string;
@@ -15,15 +17,20 @@ interface HostedZone {
 interface HostedZonesTableProps {
   onCreateClick: () => void;
   onEditClick: (zoneId: string) => void;
+  onZoneClick: (zoneId: string) => void;
   onRefreshStats: () => void;
+  onNotification: (type: "success" | "error", message: string) => void;
 }
 
-export default function HostedZonesTable({ onCreateClick, onEditClick, onRefreshStats }: HostedZonesTableProps) {
+export default function HostedZonesTable({ onCreateClick, onEditClick, onZoneClick, onRefreshStats, onNotification }: HostedZonesTableProps) {
   const [zones, setZones] = useState<HostedZone[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [error, setError] = useState("");
+  const itemsPerPage = 10;
 
   const fetchZones = async () => {
     setLoading(true);
@@ -54,16 +61,19 @@ export default function HostedZonesTable({ onCreateClick, onEditClick, onRefresh
   };
 
   useEffect(() => {
+    setCurrentPage(1);
     fetchZones();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!selectedZoneId) return;
+    setIsDeleteModalOpen(true);
+  };
 
-    if (!confirm("Are you sure you want to delete this hosted zone and all its records? This cannot be undone.")) {
-      return;
-    }
+  const executeDelete = async () => {
+    if (!selectedZoneId) return;
+    const zoneToDelete = zones.find(z => z.id === selectedZoneId);
 
     try {
       const token = localStorage.getItem("route53_token");
@@ -79,10 +89,15 @@ export default function HostedZonesTable({ onCreateClick, onEditClick, onRefresh
       }
 
       setSelectedZoneId(null);
+      setIsDeleteModalOpen(false);
       fetchZones();
       onRefreshStats();
+      if (zoneToDelete) {
+        onNotification("success", `Successfully deleted hosted zone '${zoneToDelete.name}'.`);
+      }
     } catch (err: any) {
-      alert(err.message || "An error occurred during deletion.");
+      onNotification("error", err.message || "An error occurred during deletion.");
+      setIsDeleteModalOpen(false);
     }
   };
 
@@ -172,34 +187,63 @@ export default function HostedZonesTable({ onCreateClick, onEditClick, onRefresh
                 </td>
               </tr>
             ) : (
-              zones.map((zone) => {
-                const isSelected = selectedZoneId === zone.id;
-                return (
-                  <tr
-                    key={zone.id}
-                    className={`${styles.row} ${isSelected ? styles.selectedRow : ""}`}
-                    onClick={() => setSelectedZoneId(isSelected ? null : zone.id)}
-                  >
-                    <td className={styles.checkboxCol} onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => setSelectedZoneId(isSelected ? null : zone.id)}
-                      />
-                    </td>
-                    <td className={styles.domainName}>{zone.name}</td>
-                    <td>{zone.type}</td>
-                    <td>{zone.record_count}</td>
-                    <td className={styles.descCell}>{zone.description || "-"}</td>
-                    <td className={styles.commentCell}>{zone.comment || "-"}</td>
-                    <td className={styles.zoneId}>{zone.id}</td>
-                  </tr>
-                );
-              })
+              zones
+                .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                .map((zone) => {
+                  const isSelected = selectedZoneId === zone.id;
+                  return (
+                    <tr
+                      key={zone.id}
+                      className={`${styles.row} ${isSelected ? styles.selectedRow : ""}`}
+                      onClick={() => setSelectedZoneId(isSelected ? null : zone.id)}
+                    >
+                      <td className={styles.checkboxCol} onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => setSelectedZoneId(isSelected ? null : zone.id)}
+                        />
+                      </td>
+                      <td className={styles.domainName} onClick={(e) => {
+                        e.stopPropagation();
+                        onZoneClick(zone.id);
+                      }} style={{ color: "var(--aws-blue-interactive)", cursor: "pointer" }}>
+                        {zone.name}
+                      </td>
+                      <td>{zone.type}</td>
+                      <td>{zone.record_count}</td>
+                      <td className={styles.descCell}>{zone.description || "-"}</td>
+                      <td className={styles.commentCell}>{zone.comment || "-"}</td>
+                      <td className={styles.zoneId}>{zone.id}</td>
+                    </tr>
+                  );
+                })
             )}
           </tbody>
         </table>
       </div>
+
+      <AWSPagination
+        currentPage={currentPage}
+        totalItems={zones.length}
+        itemsPerPage={itemsPerPage}
+        onPageChange={(page) => setCurrentPage(page)}
+      />
+
+      <AWSModal
+        title="Delete hosted zone"
+        isOpen={isDeleteModalOpen}
+        confirmTextRequired="delete"
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={executeDelete}
+        onClose={() => setIsDeleteModalOpen(false)}
+      >
+        <p>
+          Are you sure you want to delete the hosted zone <strong>{zones.find(z => z.id === selectedZoneId)?.name}</strong>?
+          This action cannot be undone. All DNS records configured inside this hosted zone will be deleted.
+        </p>
+      </AWSModal>
     </div>
   );
 }
