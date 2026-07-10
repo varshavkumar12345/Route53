@@ -40,7 +40,7 @@ export default function HostedZonesTable({ onCreateClick, onEditClick, onZoneCli
       const token = localStorage.getItem("route53_token");
       const url = searchQuery
         ? `${API_URL}/api/zones?name=${encodeURIComponent(searchQuery)}`
-        : "${API_URL}/api/zones";
+        : `${API_URL}/api/zones`;
 
       const response = await fetch(url, {
         headers: {

@@ -19,7 +19,7 @@ export default function TopNav() {
 
     const token = localStorage.getItem("route53_token");
     if (token) {
-      fetch("${API_URL}/api/auth/me", {
+      fetch(`${API_URL}/api/auth/me`, {
         headers: {
           Authorization: `Bearer ${token}`
         }

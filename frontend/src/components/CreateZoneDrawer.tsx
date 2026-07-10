@@ -24,7 +24,7 @@ export default function CreateZoneDrawer({ onClose, onSuccess }: CreateZoneDrawe
 
     try {
       const token = localStorage.getItem("route53_token");
-      const response = await fetch("${API_URL}/api/zones", {
+      const response = await fetch(`${API_URL}/api/zones`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
