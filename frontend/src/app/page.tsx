@@ -34,6 +34,7 @@ export default function DashboardPage() {
   const [editZoneId, setEditZoneId] = useState<string | null>(null);
   const [selectedDetailZoneId, setSelectedDetailZoneId] = useState<string | null>(null);
   const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [infoBannerDismissed, setInfoBannerDismissed] = useState(false);
   
   // Real stats
   const [stats, setStats] = useState({
@@ -233,17 +234,27 @@ export default function DashboardPage() {
     <div className={styles.container}>
       <TopNav />
       <div className={styles.mainLayout}>
-        {/* Custom sidebar wrapper to catch clicks */}
-        <div style={{ display: "flex", flexShrink: 0 }} onClick={(e) => {
-          const target = e.target as HTMLElement;
-          const listItem = target.closest("li");
-          if (listItem && listItem.textContent) {
-            handleSidebarClick(listItem.textContent.trim());
-          }
-        }}>
-          <Sidebar activeItem={activeView} />
-        </div>
+        <Sidebar activeItem={activeView} onItemClick={(item) => handleSidebarClick(item)} />
         <main className={styles.content}>
+          {!infoBannerDismissed && (
+            <div className={styles.infoBanner}>
+              <div className={styles.infoBannerIcon}>
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="#0073bb">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
+                </svg>
+              </div>
+              <div className={styles.infoBannerContent}>
+                <strong style={{ display: "block", marginBottom: "4px" }}>Introducing the new Route53 console experience</strong>
+                <span>We've redesigned the domains pages to make it easier to use. <a href="#" onClick={(e) => e.preventDefault()} style={{ color: "#0073bb", textDecoration: "underline" }}>Let us know what you think</a>. Or you can <a href="#" onClick={(e) => e.preventDefault()} style={{ color: "#0073bb", textDecoration: "underline" }}>use the old console</a>.</span>
+              </div>
+              <button className={styles.infoBannerClose} onClick={() => setInfoBannerDismissed(true)} aria-label="Dismiss banner">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                </svg>
+              </button>
+            </div>
+          )}
+
           {notification && (
             <AWSNotification 
               type={notification.type} 

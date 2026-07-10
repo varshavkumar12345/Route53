@@ -19,6 +19,22 @@
   --aws-selected-bg: #f1f6fd;
 }
 
+[data-theme="dark"] {
+  /* AWS Console Theme Colors (Dark Theme) */
+  --aws-header-bg: #161b22;
+  --aws-body-bg: #0d1117;
+  --aws-card-bg: #161b22;
+  --aws-border-color: #30363d;
+  --aws-border-darker: #8b949e;
+  --aws-text-main: #c9d1d9;
+  --aws-text-muted: #8b949e;
+  
+  /* AWS Interactive Colors (Dark Theme) */
+  --aws-selected-bg: #1f2937;
+  --aws-blue-interactive: #58a6ff;
+  --aws-blue-hover: #1f6feb;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -53,9 +69,9 @@ body {
 }
 
 .btn-secondary {
-  background-color: #ffffff;
-  color: #5f6b7a;
-  border: 1px solid #879596;
+  background-color: var(--aws-card-bg);
+  color: var(--aws-text-main);
+  border: 1px solid var(--aws-border-darker);
   padding: 8px 16px;
   font-size: 14px;
   font-weight: 700;
@@ -65,9 +81,9 @@ body {
 }
 
 .btn-secondary:hover {
-  background-color: #f2f3f3;
-  color: #16191f;
-  border-color: #5f6b7a;
+  background-color: var(--aws-body-bg);
+  color: var(--aws-text-main);
+  border-color: var(--aws-border-darker);
 }
 
 /* Inputs and Forms */

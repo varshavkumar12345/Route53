@@ -127,3 +127,51 @@
   vertical-align: middle;
   margin-right: 4px;
 }
+
+/* Informational alert banner */
+.infoBanner {
+  background-color: #f2f8fc;
+  border: 1px solid #00a1c9;
+  border-left: 4px solid #0073bb;
+  padding: 12px 16px;
+  border-radius: 2px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--aws-text-main);
+  display: flex;
+  position: relative;
+  margin-bottom: 20px;
+  gap: 12px;
+}
+
+.infoBannerIcon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  margin-top: 2px;
+}
+
+.infoBannerContent {
+  flex-grow: 1;
+}
+
+.infoBannerClose {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--aws-text-muted);
+  padding: 2px;
+  margin-left: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  height: 20px;
+  width: 20px;
+  transition: background-color 0.1s, color 0.1s;
+}
+
+.infoBannerClose:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: var(--aws-text-main);
+}
