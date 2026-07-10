@@ -39,7 +39,13 @@ export default function ZoneDetailsView({ zoneId, onBackClick }: ZoneDetailsView
   const [records, setRecords] = useState<DnsRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedRecord, setSelectedRecord] = useState<DnsRecord | null>(null);
+  const [selectedRecordIds, setSelectedRecordIds] = useState<Set<number>>(new Set());
+  const selectedRecords = records.filter(r => selectedRecordIds.has(r.id));
+  const selectedRecord = selectedRecords.length === 1 ? selectedRecords[0] : null;
+  const hasSystemRecordSelected = selectedRecords.some(r => (r.type === "NS" || r.type === "SOA") && zone && r.name === zone.name);
+  const canDelete = selectedRecordIds.size > 0 && !hasSystemRecordSelected;
+  const canEdit = selectedRecordIds.size === 1;
+
   const [createDrawerOpen, setCreateDrawerOpen] = useState(false);
   const [importDrawerOpen, setImportDrawerOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -89,10 +95,10 @@ export default function ZoneDetailsView({ zoneId, onBackClick }: ZoneDetailsView
   }, [zoneId, searchQuery]);
 
   const handleDelete = () => {
-    if (!selectedRecord) return;
+    if (selectedRecordIds.size === 0) return;
     
     // Safety check: block UI delete for NS/SOA
-    if (isSystemRecord(selectedRecord)) {
+    if (hasSystemRecordSelected) {
       setNotification({
         type: "error",
         message: "Default NS and SOA records are required for hosted zone routing and cannot be deleted."
@@ -104,27 +110,31 @@ export default function ZoneDetailsView({ zoneId, onBackClick }: ZoneDetailsView
   };
 
   const executeDelete = async () => {
-    if (!selectedRecord) return;
-    const recToDelete = selectedRecord;
+    if (selectedRecordIds.size === 0) return;
+    const recordsCountToDelete = selectedRecordIds.size;
 
     try {
       const token = localStorage.getItem("route53_token");
-      const response = await fetch(`http://localhost:8000/api/zones/${zoneId}/records/${selectedRecord.id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await fetch(`http://localhost:8000/api/zones/${zoneId}/records/bulk-delete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ record_ids: Array.from(selectedRecordIds) })
       });
 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.detail || "Failed to delete record.");
+        throw new Error(errData.detail || "Failed to delete records.");
       }
 
-      setSelectedRecord(null);
+      setSelectedRecordIds(new Set());
       setIsDeleteModalOpen(false);
       fetchData();
       setNotification({
         type: "success",
-        message: `Successfully deleted DNS record '${recToDelete.name}' [${recToDelete.type}].`
+        message: `Successfully deleted ${recordsCountToDelete} DNS record(s).`
       });
     } catch (err: any) {
       setNotification({
@@ -134,6 +144,38 @@ export default function ZoneDetailsView({ zoneId, onBackClick }: ZoneDetailsView
       setIsDeleteModalOpen(false);
     }
   };
+
+  const handleToggleRow = (id: number) => {
+    setSelectedRecordIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const paginatedRecords = records.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleToggleAll = () => {
+    const visibleIds = paginatedRecords.map(r => r.id);
+    const allVisibleSelected = visibleIds.every(id => selectedRecordIds.has(id));
+
+    setSelectedRecordIds(prev => {
+      const next = new Set(prev);
+      if (allVisibleSelected) {
+        visibleIds.forEach(id => next.delete(id));
+      } else {
+        visibleIds.forEach(id => next.add(id));
+      }
+      return next;
+    });
+  };
+
+  const isAllVisibleSelected = paginatedRecords.length > 0 && paginatedRecords.every(r => selectedRecordIds.has(r.id));
+  const isSomeVisibleSelected = paginatedRecords.some(r => selectedRecordIds.has(r.id)) && !isAllVisibleSelected;
 
   const isSystemRecord = (rec: DnsRecord) => {
     if (!zone) return false;
@@ -194,10 +236,10 @@ export default function ZoneDetailsView({ zoneId, onBackClick }: ZoneDetailsView
             <button
               onClick={() => selectedRecord && setEditRecordId(selectedRecord.id)}
               className="btn-secondary"
-              disabled={!selectedRecord}
+              disabled={!canEdit}
               style={{
-                opacity: selectedRecord ? 1 : 0.5,
-                cursor: selectedRecord ? "pointer" : "not-allowed",
+                opacity: canEdit ? 1 : 0.5,
+                cursor: canEdit ? "pointer" : "not-allowed",
               }}
             >
               Edit record
@@ -205,14 +247,14 @@ export default function ZoneDetailsView({ zoneId, onBackClick }: ZoneDetailsView
             <button
               onClick={handleDelete}
               className="btn-secondary"
-              disabled={!selectedRecord || isSystemRecord(selectedRecord)}
+              disabled={!canDelete}
               style={{
-                opacity: selectedRecord && !isSystemRecord(selectedRecord) ? 1 : 0.5,
-                cursor: selectedRecord && !isSystemRecord(selectedRecord) ? "pointer" : "not-allowed",
+                opacity: canDelete ? 1 : 0.5,
+                cursor: canDelete ? "pointer" : "not-allowed",
                 marginLeft: "10px"
               }}
             >
-              Delete record
+              {selectedRecordIds.size > 1 ? `Delete ${selectedRecordIds.size} records` : "Delete record"}
             </button>
             <button onClick={() => setImportDrawerOpen(true)} className="btn-secondary" style={{ marginLeft: "10px" }}>
               Import records
@@ -245,7 +287,18 @@ export default function ZoneDetailsView({ zoneId, onBackClick }: ZoneDetailsView
           <table className={styles.table}>
             <thead>
               <tr>
-                <th className={styles.checkboxCol} />
+                <th className={styles.checkboxCol}>
+                  <input
+                    type="checkbox"
+                    checked={isAllVisibleSelected}
+                    ref={(input) => {
+                      if (input) {
+                        input.indeterminate = isSomeVisibleSelected;
+                      }
+                    }}
+                    onChange={handleToggleAll}
+                  />
+                </th>
                 <th>Record name</th>
                 <th>Type</th>
                 <th>Routing policy</th>
@@ -271,19 +324,19 @@ export default function ZoneDetailsView({ zoneId, onBackClick }: ZoneDetailsView
                 records
                   .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
                   .map((rec) => {
-                    const isSelected = selectedRecord?.id === rec.id;
+                    const isSelected = selectedRecordIds.has(rec.id);
                     const systemRecord = isSystemRecord(rec);
                     return (
                       <tr
                         key={rec.id}
                         className={`${styles.row} ${isSelected ? styles.selectedRow : ""}`}
-                        onClick={() => setSelectedRecord(isSelected ? null : rec)}
+                        onClick={() => handleToggleRow(rec.id)}
                       >
                         <td className={styles.checkboxCol} onClick={(e) => e.stopPropagation()}>
                           <input
                             type="checkbox"
                             checked={isSelected}
-                            onChange={() => setSelectedRecord(isSelected ? null : rec)}
+                            onChange={() => handleToggleRow(rec.id)}
                           />
                         </td>
                         <td className={styles.recordName}>
@@ -331,11 +384,11 @@ export default function ZoneDetailsView({ zoneId, onBackClick }: ZoneDetailsView
           recordId={editRecordId}
           onClose={() => setEditRecordId(null)}
           onSuccess={() => {
-            setSelectedRecord(null);
-            fetchData();
-            setNotification({ type: "success", message: "Successfully updated DNS record." });
-          }}
-        />
+          setSelectedRecordIds(new Set());
+          fetchData();
+          setNotification({ type: "success", message: "Successfully updated DNS record." });
+        }}
+      />
       )}
 
       {importDrawerOpen && (
@@ -362,17 +415,24 @@ export default function ZoneDetailsView({ zoneId, onBackClick }: ZoneDetailsView
       )}
 
       <AWSModal
-        title="Delete DNS record"
+        title={selectedRecordIds.size > 1 ? "Delete DNS records" : "Delete DNS record"}
         isOpen={isDeleteModalOpen}
         confirmLabel="Delete"
         cancelLabel="Cancel"
         onConfirm={executeDelete}
         onClose={() => setIsDeleteModalOpen(false)}
       >
-        <p>
-          Are you sure you want to delete the record <strong>{selectedRecord?.name}</strong> of type <strong>{selectedRecord?.type}</strong>?
-          This action cannot be undone.
-        </p>
+        {selectedRecordIds.size > 1 ? (
+          <p>
+            Are you sure you want to delete the selected <strong>{selectedRecordIds.size}</strong> records?
+            This action cannot be undone.
+          </p>
+        ) : (
+          <p>
+            Are you sure you want to delete the record <strong>{selectedRecord?.name}</strong> of type <strong>{selectedRecord?.type}</strong>?
+            This action cannot be undone.
+          </p>
+        )}
       </AWSModal>
     </div>
   );

@@ -427,3 +427,66 @@ def import_bind_records(
         "status": "success",
         "imported_count": imported_count
     }
+
+class BulkDeleteRequest(BaseModel):
+    record_ids: List[int]
+
+@router.post("/{zone_id}/records/bulk-delete")
+def bulk_delete_records(
+    zone_id: str,
+    request: BulkDeleteRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    zone = db.query(HostedZone).filter(HostedZone.id == zone_id, HostedZone.owner_id == current_user.id).first()
+    if not zone:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Hosted zone not found or access denied"
+        )
+        
+    if not request.record_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No record IDs provided for deletion."
+        )
+        
+    # Fetch target records
+    records = db.query(DnsRecord).filter(
+        DnsRecord.id.in_(request.record_ids),
+        DnsRecord.zone_id == zone_id
+    ).all()
+    
+    if len(records) != len(request.record_ids):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="One or more records not found in this zone."
+        )
+        
+    # Block deleting system records
+    for r in records:
+        if r.type in ["NS", "SOA"] and r.name == zone.name:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Default system records (NS/SOA) like '{r.name}' cannot be deleted."
+            )
+            
+    deleted_count = len(records)
+    for r in records:
+        db.delete(r)
+        
+    zone.record_count -= deleted_count
+    
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error during bulk deletion: {str(e)}"
+        )
+        
+    return {
+        "status": "success",
+        "deleted_count": deleted_count
+    }
