@@ -51,6 +51,9 @@ import os
 _raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000")
 _allowed_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
 
+print("ALLOWED_ORIGINS ENV:", _raw_origins)
+print("Parsed origins:", _allowed_origins)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins,
