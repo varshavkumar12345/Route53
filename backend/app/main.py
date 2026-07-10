@@ -45,9 +45,15 @@ finally:
     db.close()
 
 # CORS configuration
+# Set ALLOWED_ORIGINS env var on Render as a comma-separated list, e.g.:
+# https://route53.vercel.app,https://my-custom-domain.com
+import os
+_raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000")
+_allowed_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
