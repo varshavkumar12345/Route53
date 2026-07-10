@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./TopNav.module.css";
+import { API_URL } from "../config";
 
 export default function TopNav() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function TopNav() {
 
     const token = localStorage.getItem("route53_token");
     if (token) {
-      fetch("http://localhost:8000/api/auth/me", {
+      fetch("${API_URL}/api/auth/me", {
         headers: {
           Authorization: `Bearer ${token}`
         }

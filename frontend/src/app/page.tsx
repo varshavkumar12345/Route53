@@ -10,6 +10,7 @@ import EditZoneDrawer from "../components/EditZoneDrawer";
 import ZoneDetailsView from "../components/ZoneDetailsView";
 import AWSNotification from "../components/AWSNotification";
 import styles from "./page.module.css";
+import { API_URL } from "../config";
 
 interface HostedZone {
   id: string;
@@ -47,7 +48,7 @@ export default function DashboardPage() {
       const token = localStorage.getItem("route53_token");
       if (!token) return;
 
-      const response = await fetch("http://localhost:8000/api/zones", {
+      const response = await fetch(`${API_URL}/api/zones`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -77,7 +78,7 @@ export default function DashboardPage() {
       fetchStats();
 
       // Fetch dynamic profile to get unique AWS Account ID
-      fetch("http://localhost:8000/api/auth/me", {
+      fetch(`${API_URL}/api/auth/me`, {
         headers: {
           Authorization: `Bearer ${token}`
         }

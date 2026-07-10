@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import styles from "./CreateZoneDrawer.module.css";
+import { API_URL } from "../config";
 
 interface CreateRecordDrawerProps {
   zoneId: string;
@@ -30,7 +31,7 @@ export default function CreateRecordDrawer({ zoneId, zoneName, onClose, onSucces
       const cleanPrefix = prefix.trim();
       const recordName = cleanPrefix ? `${cleanPrefix}.${zoneName}` : zoneName;
 
-      const response = await fetch(`http://localhost:8000/api/zones/${zoneId}/records`, {
+      const response = await fetch(`${API_URL}/api/zones/${zoneId}/records`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

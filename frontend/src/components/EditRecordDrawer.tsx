@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import styles from "./CreateZoneDrawer.module.css";
+import { API_URL } from "../config";
 
 interface EditRecordDrawerProps {
   zoneId: string;
@@ -26,7 +27,7 @@ export default function EditRecordDrawer({ zoneId, zoneName, recordId, onClose, 
       setError("");
       try {
         const token = localStorage.getItem("route53_token");
-        const response = await fetch(`http://localhost:8000/api/zones/${zoneId}/records`, {
+        const response = await fetch(`${API_URL}/api/zones/${zoneId}/records`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -82,7 +83,7 @@ export default function EditRecordDrawer({ zoneId, zoneName, recordId, onClose, 
       const cleanPrefix = prefix.trim();
       const recordName = cleanPrefix ? `${cleanPrefix}.${zoneName}` : zoneName;
 
-      const response = await fetch(`http://localhost:8000/api/zones/${zoneId}/records/${recordId}`, {
+      const response = await fetch(`${API_URL}/api/zones/${zoneId}/records/${recordId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

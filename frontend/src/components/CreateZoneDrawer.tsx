@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import styles from "./CreateZoneDrawer.module.css";
+import { API_URL } from "../config";
 
 interface CreateZoneDrawerProps {
   onClose: () => void;
@@ -23,7 +24,7 @@ export default function CreateZoneDrawer({ onClose, onSuccess }: CreateZoneDrawe
 
     try {
       const token = localStorage.getItem("route53_token");
-      const response = await fetch("http://localhost:8000/api/zones", {
+      const response = await fetch("${API_URL}/api/zones", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -9,6 +9,7 @@ import ExportZoneModal from "./ExportZoneModal";
 import AWSPagination from "./AWSPagination";
 import AWSModal from "./AWSModal";
 import AWSNotification from "./AWSNotification";
+import { API_URL } from "../config";
 
 interface HostedZone {
   id: string;
@@ -63,7 +64,7 @@ export default function ZoneDetailsView({ zoneId, onBackClick }: ZoneDetailsView
       const token = localStorage.getItem("route53_token");
       
       // Fetch Zone Metadata
-      const zoneRes = await fetch(`http://localhost:8000/api/zones/${zoneId}`, {
+      const zoneRes = await fetch(`${API_URL}/api/zones/${zoneId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!zoneRes.ok) throw new Error("Failed to load hosted zone metadata.");
@@ -72,8 +73,8 @@ export default function ZoneDetailsView({ zoneId, onBackClick }: ZoneDetailsView
 
       // Fetch Records
       const recordsUrl = searchQuery
-        ? `http://localhost:8000/api/zones/${zoneId}/records?name=${encodeURIComponent(searchQuery)}`
-        : `http://localhost:8000/api/zones/${zoneId}/records`;
+        ? `${API_URL}/api/zones/${zoneId}/records?name=${encodeURIComponent(searchQuery)}`
+        : `${API_URL}/api/zones/${zoneId}/records`;
       
       const recordsRes = await fetch(recordsUrl, {
         headers: { Authorization: `Bearer ${token}` }
@@ -115,7 +116,7 @@ export default function ZoneDetailsView({ zoneId, onBackClick }: ZoneDetailsView
 
     try {
       const token = localStorage.getItem("route53_token");
-      const response = await fetch(`http://localhost:8000/api/zones/${zoneId}/records/bulk-delete`, {
+      const response = await fetch(`${API_URL}/api/zones/${zoneId}/records/bulk-delete`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

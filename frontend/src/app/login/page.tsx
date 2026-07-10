@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./login.module.css";
+import { API_URL } from "../../config";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -30,7 +31,7 @@ export default function LoginPage() {
     try {
       if (isSignUp) {
         // Sign Up (Register)
-        const response = await fetch("http://localhost:8000/api/auth/register", {
+        const response = await fetch(`${API_URL}/api/auth/register`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -55,7 +56,7 @@ export default function LoginPage() {
         formData.append("username", username);
         formData.append("password", password);
 
-        const response = await fetch("http://localhost:8000/api/auth/login", {
+        const response = await fetch(`${API_URL}/api/auth/login`, {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -93,7 +94,7 @@ export default function LoginPage() {
 
       <div className={styles.loginBox}>
         <h1 className={styles.title}>{isSignUp ? "Create AWS account" : "Sign in"}</h1>
-        
+
         {successMessage && <div className={styles.successMessage}>{successMessage}</div>}
         {error && <div className={styles.errorMessage}>{error}</div>}
 

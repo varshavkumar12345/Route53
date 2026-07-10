@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import styles from "./HostedZonesTable.module.css";
+import { API_URL } from "../config";
 import AWSPagination from "./AWSPagination";
 import AWSModal from "./AWSModal";
 
@@ -38,8 +39,8 @@ export default function HostedZonesTable({ onCreateClick, onEditClick, onZoneCli
     try {
       const token = localStorage.getItem("route53_token");
       const url = searchQuery
-        ? `http://localhost:8000/api/zones?name=${encodeURIComponent(searchQuery)}`
-        : "http://localhost:8000/api/zones";
+        ? `${API_URL}/api/zones?name=${encodeURIComponent(searchQuery)}`
+        : "${API_URL}/api/zones";
 
       const response = await fetch(url, {
         headers: {
@@ -77,7 +78,7 @@ export default function HostedZonesTable({ onCreateClick, onEditClick, onZoneCli
 
     try {
       const token = localStorage.getItem("route53_token");
-      const response = await fetch(`http://localhost:8000/api/zones/${selectedZoneId}`, {
+      const response = await fetch(`${API_URL}/api/zones/${selectedZoneId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

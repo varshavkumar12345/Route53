@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import styles from "./ImportRecordsDrawer.module.css";
+import { API_URL } from "../config";
 
 interface ImportRecordsDrawerProps {
   zoneId: string;
@@ -48,7 +49,7 @@ export default function ImportRecordsDrawer({
 
     try {
       const token = localStorage.getItem("route53_token");
-      const res = await fetch(`http://localhost:8000/api/zones/${zoneId}/import`, {
+      const res = await fetch(`${API_URL}/api/zones/${zoneId}/import`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

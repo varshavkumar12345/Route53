@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import styles from "./ExportZoneModal.module.css";
+import { API_URL } from "../config";
 import AWSModal from "./AWSModal";
 
 interface ExportZoneModalProps {
@@ -28,7 +29,7 @@ export default function ExportZoneModal({
     setError(null);
     try {
       const token = localStorage.getItem("route53_token");
-      const res = await fetch(`http://localhost:8000/api/zones/${zoneId}/export?format=${format}`, {
+      const res = await fetch(`${API_URL}/api/zones/${zoneId}/export?format=${format}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }

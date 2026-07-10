@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import styles from "./CreateZoneDrawer.module.css";
+import { API_URL } from "../config";
 
 interface EditZoneDrawerProps {
   zoneId: string;
@@ -24,7 +25,7 @@ export default function EditZoneDrawer({ zoneId, onClose, onSuccess }: EditZoneD
       setLoading(true);
       try {
         const token = localStorage.getItem("route53_token");
-        const response = await fetch(`http://localhost:8000/api/zones/${zoneId}`, {
+        const response = await fetch(`${API_URL}/api/zones/${zoneId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -56,7 +57,7 @@ export default function EditZoneDrawer({ zoneId, onClose, onSuccess }: EditZoneD
 
     try {
       const token = localStorage.getItem("route53_token");
-      const response = await fetch(`http://localhost:8000/api/zones/${zoneId}`, {
+      const response = await fetch(`${API_URL}/api/zones/${zoneId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
