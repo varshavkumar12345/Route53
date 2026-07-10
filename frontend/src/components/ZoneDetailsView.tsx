@@ -5,6 +5,7 @@ import styles from "./ZoneDetailsView.module.css";
 import CreateRecordDrawer from "./CreateRecordDrawer";
 import EditRecordDrawer from "./EditRecordDrawer";
 import ImportRecordsDrawer from "./ImportRecordsDrawer";
+import ExportZoneModal from "./ExportZoneModal";
 import AWSPagination from "./AWSPagination";
 import AWSModal from "./AWSModal";
 import AWSNotification from "./AWSNotification";
@@ -41,6 +42,7 @@ export default function ZoneDetailsView({ zoneId, onBackClick }: ZoneDetailsView
   const [selectedRecord, setSelectedRecord] = useState<DnsRecord | null>(null);
   const [createDrawerOpen, setCreateDrawerOpen] = useState(false);
   const [importDrawerOpen, setImportDrawerOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [editRecordId, setEditRecordId] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -215,6 +217,9 @@ export default function ZoneDetailsView({ zoneId, onBackClick }: ZoneDetailsView
             <button onClick={() => setImportDrawerOpen(true)} className="btn-secondary" style={{ marginLeft: "10px" }}>
               Import records
             </button>
+            <button onClick={() => setIsExportModalOpen(true)} className="btn-secondary" style={{ marginLeft: "10px" }}>
+              Export zone
+            </button>
             <button onClick={() => setCreateDrawerOpen(true)} className="btn-primary" style={{ marginLeft: "10px" }}>
               Create record
             </button>
@@ -340,6 +345,18 @@ export default function ZoneDetailsView({ zoneId, onBackClick }: ZoneDetailsView
           onSuccess={(count) => {
             fetchData();
             setNotification({ type: "success", message: `Successfully imported ${count} records from BIND zone file.` });
+          }}
+        />
+      )}
+
+      {isExportModalOpen && zone && (
+        <ExportZoneModal
+          zoneId={zoneId}
+          zoneName={zone.name}
+          isOpen={isExportModalOpen}
+          onClose={() => setIsExportModalOpen(false)}
+          onSuccess={() => {
+            setNotification({ type: "success", message: "Hosted zone records exported successfully." });
           }}
         />
       )}
